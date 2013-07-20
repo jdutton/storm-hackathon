@@ -34,6 +34,13 @@ class PigLatinBolt < RedStorm::DSL::Bolt
 end
 
 class HelloWorldTopology < RedStorm::DSL::Topology
+  configure "Happyzone-Exclaim" do |env|
+    if env == :cluster
+      num_workers 3
+      max_task_parallelism 16
+    end
+  end
+  
   spout HelloWorldSpout do
     output_fields :word
   end
