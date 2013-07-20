@@ -6,23 +6,23 @@ class SemantriaBolt < RedStorm::DSL::Bolt
 
   class SessionCallbackHandler < CallbackHandler
     def onRequest(sender, args)
-      puts "Request: ", args
+      # puts "Request: ", args
     end
 
     def onResponse(sender, args)
-      puts "Response: ", args
+      # puts "Response: ", args
     end
 
     def onError(sender, args)
-      puts 'Error: ', args
+      # puts 'Error: ', args
     end
 
     def onDocsAutoResponse(sender, args)
-      puts "DocsAutoResponse: ", args.length, args
+      # puts "DocsAutoResponse: ", args.length, args
     end
 
     def onCollsAutoResponse(sender, args)
-      puts "CollsAutoResponse: ", args.length, args
+      # puts "CollsAutoResponse: ", args.length, args
     end
   end
 
@@ -94,19 +94,23 @@ class SemantriaBolt < RedStorm::DSL::Bolt
 
       loop do
         sleep(1)
-        # Requests processed results from Semantria service
-        status = @session.getProcessedDocuments()
-        # Check status from Semantria service
-        status.is_a? Array and status.each do |data|
-          id = data['id']
-          score = data['sentiment_score']
-          orig = @queued_tuples[id]
-          if orig
-            unanchored_emit(orig, score)
-            @queued_tuples.delete(id) # Clean up tuple
+        begin
+          # Requests processed results from Semantria service
+          status = @session.getProcessedDocuments()
+          # Check status from Semantria service
+          status.is_a? Array and status.each do |data|
+            id = data['id']
+            score = data['sentiment_score']
+            orig = @queued_tuples[id]
+            if orig
+              unanchored_emit(orig, score)
+              @queued_tuples.delete(id) # Clean up tuple
+            end
           end
+        rescue => err
+          log.error "Poll document failed: #{err.class}, #{err}"
         end
-        puts status.length, ' documents received successfully.'
+        # puts status.length, ' documents received successfully.'
       end
     end
 

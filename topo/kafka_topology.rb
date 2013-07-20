@@ -9,13 +9,21 @@ require 'red_storm'
 require 'topo/tweet_xml_parse_bolt'
 require 'topo/semantria_bolt'
 require 'json'
-
+require 'socket'
+  
 class EchoBolt < RedStorm::DSL::Bolt
+  on_init do
+    host = 'kastlersteinhauser.com'
+    port = 1337
+    @socket = TCPSocket.open(host, port) rescue nil
+  end
+
   on_receive :ack => true, :anchor => true do |tuple|
     tweet = JSON.parse(tuple[0].to_s)
     score = tuple[1]
     # log.info("******************\n#{tuple[0].to_s}")
-    log.info("******************\nScore: #{score}:  #{tweet["id_str"]} from #{tweet["user"]["screen_name"]}\n#{tweet["text"]}")
+    log.info("****************** Score: #{score}\n#{tweet["text"]}")
+    @socket.puts "Score: #{score}\n#{tweet["text"]}" if score.abs >= 0.5 unless @socket.nil?
   end
 end
 
@@ -47,8 +55,11 @@ class KafkaTopology < RedStorm::DSL::Topology
     source SemantriaBolt, :shuffle
   end
 
-  configure do |env|
-    debug true
+  configure "Happyzon-Exclaim" do |env|
+    if env == :cluster
+      num_workers 3
+      max_task_parallelism 16
+    end
   end
 
   on_submit do |env|
