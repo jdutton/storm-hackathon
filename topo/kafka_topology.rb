@@ -21,9 +21,14 @@ class EchoBolt < RedStorm::DSL::Bolt
   on_receive :ack => true, :anchor => true do |tuple|
     tweet = JSON.parse(tuple[0].to_s)
     score = tuple[1]
-    # log.info("******************\n#{tuple[0].to_s}")
-    log.info("****************** Score: #{score}\n#{tweet["text"]}")
-    @socket.puts "Score: #{score}\n#{tweet["text"]}" if score.abs >= 0.5 unless @socket.nil?
+    if score.abs >= 0.6
+      j = (score.abs * 10).to_i - 5
+      msg = '      '
+      j.times { |offset| msg[offset] = (score > 0) ? '+' : '-' }
+      msg << tweet["text"]
+      @socket.puts "#{msg}\n" unless @socket.nil?
+    end
+    log.info("****************** Score: #{score}\n#{msg}\n")
   end
 end
 
@@ -59,6 +64,8 @@ class KafkaTopology < RedStorm::DSL::Topology
     if env == :cluster
       num_workers 2
       max_task_parallelism 4
+    else
+      #debug true
     end
   end
 
