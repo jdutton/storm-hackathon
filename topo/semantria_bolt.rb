@@ -43,7 +43,7 @@ class SemantriaBolt < RedStorm::DSL::Bolt
     message = orig = tuple[0].to_s
     begin # If the message is JSON (i.e. Tweet), pull out the "summary" field
       json = JSON.parse(orig)
-      message = json["summary"]
+      message = json["text"]
     rescue
     end
     queue_document(orig, message)
@@ -101,7 +101,6 @@ class SemantriaBolt < RedStorm::DSL::Bolt
           id = data['id']
           score = data['sentiment_score']
           orig = @queued_tuples[id]
-          puts "Jeff: orig is #{orig}"
           if orig
             unanchored_emit(orig, score)
             @queued_tuples.delete(id) # Clean up tuple
