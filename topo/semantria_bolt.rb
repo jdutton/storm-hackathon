@@ -81,6 +81,7 @@ class SemantriaBolt < RedStorm::DSL::Bolt
     rescue => err
       log.error "Queue document failed: #{err.class}, #{err}"
       @queued_tuples.delete(id) # Clean up, request failed
+      create_session
     end
     while @queued_tuples.size > 20
       sleep(2)
@@ -109,6 +110,7 @@ class SemantriaBolt < RedStorm::DSL::Bolt
           end
         rescue => err
           log.error "Poll document failed: #{err.class}, #{err}"
+          create_session
         end
         # puts status.length, ' documents received successfully.'
       end

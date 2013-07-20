@@ -51,21 +51,21 @@ class KafkaTopology < RedStorm::DSL::Topology
     output_fields :tweet_json, :score
   end
 
-  bolt EchoBolt do
+  bolt EchoBolt, :parallelism => 1 do
     source SemantriaBolt, :shuffle
   end
 
   configure "Happyzon-Exclaim" do |env|
     if env == :cluster
-      num_workers 3
-      max_task_parallelism 16
+      num_workers 2
+      max_task_parallelism 4
     end
   end
 
   on_submit do |env|
     if env == :local
-      sleep(120)
-      cluster.shutdown
+      # sleep(120)
+      # cluster.shutdown
     end
   end
 end
