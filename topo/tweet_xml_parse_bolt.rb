@@ -1,5 +1,5 @@
 require 'nokogiri'
-#require 'json'
+require 'json'
 
 class TweetXmlParseBolt < RedStorm::DSL::Bolt
   on_receive :emit => true, :ack => true, :anchor => true do |tuple|
@@ -18,8 +18,8 @@ class TweetXmlParseBolt < RedStorm::DSL::Bolt
     tweet[:author_uri] = author_uri.content unless author_uri.nil?
     tweet[:summary] = summary.content unless summary.nil?
     
-    [tweet[:id], tweet[:author], tweet[:author_uri], tweet[:summary]]
-#    [tweet.to_json]  #unless tweet.empty?
+    # [tweet[:id], tweet[:author], tweet[:author_uri], tweet[:summary]]
+    [tweet.to_json]  #unless tweet.empty?
   end
 end
 

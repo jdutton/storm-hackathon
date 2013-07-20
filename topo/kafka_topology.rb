@@ -7,9 +7,13 @@ java_import 'java.util.ArrayList'
 
 require 'red_storm'
 require 'topo/tweet_xml_parse_bolt'
+require 'json'
 
 class EchoBolt < RedStorm::DSL::Bolt
-  on_receive {|tuple| log.info("******************\n#{tuple[:id].to_s} from #{tuple[:author].to_s} [#{tuple[:author_uri].to_s}]\n#{tuple[:summary].to_s}")}
+  on_receive :ack => true, :anchor => true do |tuple|
+    tweet = JSON.parse(tuple[0])
+    log.info("******************\n#{tweet["id"].to_s} from #{tweet["author"].to_s} [#{tweet["author_uri"].to_s}]\n#{tweet["summary"].to_s}")
+  end
 end
 
 class KafkaTopology < RedStorm::DSL::Topology
@@ -23,7 +27,7 @@ class KafkaTopology < RedStorm::DSL::Topology
   spout KafkaSpout, [spout_config]
 
   bolt TweetXmlParseBolt do
-    output_fields :id, :author, :author_uri, :summary
+    output_fields :tweet_json
     source KafkaSpout, :shuffle
   end
 
