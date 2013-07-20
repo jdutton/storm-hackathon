@@ -13,7 +13,7 @@ class EchoBolt < RedStorm::DSL::Bolt
   on_receive :ack => true, :anchor => true do |tuple|
     tweet = JSON.parse(tuple[0].to_s)
     # log.info("******************\n#{tuple[0].to_s}")
-    log.info("******************\n#{tweet["id_str"]} from [#{tweet["user"]["screen_name"]}]\n#{tweet["text"]}")
+    log.info("****************** #{tweet["id_str"]} from [#{tweet["user"]["screen_name"]}]\n#{tweet["text"]}")
   end
 end
 
