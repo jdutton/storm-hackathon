@@ -16,7 +16,11 @@ class TestSentimentSpout < RedStorm::DSL::Spout
 end
 
 class EchoBolt < RedStorm::DSL::Bolt
-  on_receive {|tuple| log.info(tuple[0].to_s)}
+  on_receive do |tuple|
+    message = tuple[0].to_s
+    score = tuple[1]
+    log.info("Score: #{score}, Msg: #{message}")
+  end
 end
 
 class TestSentimentTopology < RedStorm::DSL::Topology

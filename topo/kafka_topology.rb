@@ -7,12 +7,14 @@ java_import 'java.util.ArrayList'
 
 require 'red_storm'
 require 'topo/tweet_xml_parse_bolt'
+require 'topo/semantria_bolt'
 require 'json'
 
 class EchoBolt < RedStorm::DSL::Bolt
   on_receive :ack => true, :anchor => true do |tuple|
     tweet = JSON.parse(tuple[0])
-    log.info("******************\n#{tweet["id"].to_s} from #{tweet["author"].to_s} [#{tweet["author_uri"].to_s}]\n#{tweet["summary"].to_s}")
+    score = tuple[1]
+    log.info("******************\nScore: #{score}:  #{tweet["id"].to_s} from #{tweet["author"].to_s} [#{tweet["author_uri"].to_s}]\n#{tweet["summary"].to_s}")
   end
 end
 
@@ -31,8 +33,13 @@ class KafkaTopology < RedStorm::DSL::Topology
     source KafkaSpout, :shuffle
   end
 
-  bolt EchoBolt do
+  bolt SemantriaBolt do
     source TweetXmlParseBolt, :shuffle
+    output_fields :tweet_json, :score
+  end
+
+  bolt EchoBolt do
+    source SemantriaBolt, :shuffle
   end
 
   configure do |env|
@@ -41,8 +48,8 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   on_submit do |env|
     if env == :local
-      # sleep(10)
-      # cluster.shutdown
+      sleep(120)
+      cluster.shutdown
     end
   end
 end

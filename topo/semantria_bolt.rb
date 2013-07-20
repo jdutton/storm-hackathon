@@ -1,7 +1,8 @@
 require 'semantria'
+require 'json'
 
 class SemantriaBolt < RedStorm::DSL::Bolt
-  output_fields :string
+  output_fields :message, :score
 
   class SessionCallbackHandler < CallbackHandler
     def onRequest(sender, args)
@@ -39,8 +40,13 @@ class SemantriaBolt < RedStorm::DSL::Bolt
   on_receive :emit => false do |tuple|
     # Queue document to the Semantria service
     # Poll will later get the result to emit
-    message = tuple[0].to_s
-    queue_document(message)
+    message = orig = tuple[0].to_s
+    begin # If the message is JSON (i.e. Tweet), pull out the "summary" field
+      json = JSON.parse(orig)
+      message = json["summary"]
+    rescue
+    end
+    queue_document(orig, message)
     ack(tuple)
   end
 
@@ -60,14 +66,24 @@ class SemantriaBolt < RedStorm::DSL::Bolt
     @session = session
   end
 
-  def queue_document(message)
+  def queue_document(orig, message)
     id = rand(10 ** 10).to_s.rjust(10, '0')
     doc = {'id' => id, 'text' => message}
-    @queued_tuples[id] = message
-    status = @session.queueDocument(doc)
-    # Check status from Semantria service
-    if status == 202
-      log.info 'Document ' + doc['id'] + ' queued successfully.'
+    @queued_tuples[id] = orig
+    begin
+      status = @session.queueDocument(doc)
+      # Check status from Semantria service
+      if status == 202
+        log.info 'Document ' + doc['id'] + ' queued successfully.'
+      else
+        @queued_tuples.delete(id) # Clean up, request failed
+      end
+    rescue => err
+      log.error "Queue document failed: #{err.class}, #{err}"
+      @queued_tuples.delete(id) # Clean up, request failed
+    end
+    while @queued_tuples.size > 20
+      sleep(2)
     end
   end
 
@@ -84,9 +100,10 @@ class SemantriaBolt < RedStorm::DSL::Bolt
         status.is_a? Array and status.each do |data|
           id = data['id']
           score = data['sentiment_score']
-          message = @queued_tuples[id]
-          if message
-            unanchored_emit(message, score)
+          orig = @queued_tuples[id]
+          puts "Jeff: orig is #{orig}"
+          if orig
+            unanchored_emit(orig, score)
             @queued_tuples.delete(id) # Clean up tuple
           end
         end
