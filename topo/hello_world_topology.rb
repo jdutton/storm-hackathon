@@ -1,7 +1,21 @@
 require 'red_storm'
 
 class HelloWorldSpout < RedStorm::DSL::Spout
-  on_init {@words = ["hello", "world"]}
+  on_init {@words = ["hello", "storm", "world", "Hoor"]}
+
+  on_fail do |id|
+    log.info("***** FAIL #{id}")
+  end
+
+  # on_ack do |id|
+  #   @ids.delete(id)
+  #   log.info("***** ACK #{id}")
+  #   if @ids.empty?
+  #     log.info("*** SUCCESS")
+  #     @redis.lpush(File.basename(__FILE__), "SUCCESS")
+  #   end
+  # end
+
   on_send {@words.shift unless @words.empty?}
 end
 
@@ -11,12 +25,24 @@ class HelloWorldBolt < RedStorm::DSL::Bolt
   end
 end
 
+class PigLatinBolt < RedStorm::DSL::Bolt
+  output_fields :string
+
+  on_receive :emit => true, :ack => true, :anchor => true do |tuple|
+    tuple[0] + "ay"
+  end
+end
+
 class HelloWorldTopology < RedStorm::DSL::Topology
   spout HelloWorldSpout do
     output_fields :word
   end
 
-  bolt HelloWorldBolt do
+  bolt PigLatinBolt do
     source HelloWorldSpout, :global
+  end
+
+  bolt HelloWorldBolt do
+    source PigLatinBolt, :global
   end
 end
