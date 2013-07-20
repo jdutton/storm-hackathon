@@ -1,4 +1,6 @@
 require 'red_storm'
+require 'topo/piglatin_bolt'
+
 require 'thread'
 require 'redis'
 
@@ -39,25 +41,22 @@ class RedisSpout < RedStorm::DSL::Spout
 
 end
 
-class PigLatinBolt < RedStorm::DSL::Bolt
-  output_fields :string
-
-  on_receive :emit => true, :ack => true, :anchor => true do |tuple|
-    tuple[0] + "ay"
-  end
-end
-
 class RedisTopology < RedStorm::DSL::Topology
+  configure "Happyzone-Redis" do |env|
+    debug true
+    message_timeout_secs 10
+    num_ackers 2
+
+    if env == :cluster
+      num_workers 3
+      max_task_parallelism 16
+    end
+  end
+  
   spout RedisSpout, :parallelism => 1
 
   bolt PigLatinBolt, :parallelism => 1 do
     source RedisSpout, :shuffle
-  end
-
-  configure do |env|
-    debug true
-    message_timeout_secs 10
-    num_ackers 2
   end
 
   on_submit do |env|

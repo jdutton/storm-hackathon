@@ -1,4 +1,5 @@
 require 'red_storm'
+require 'topo/piglatin_bolt'
 
 class HelloWorldSpout < RedStorm::DSL::Spout
   on_init {@words = ["hello", "storm", "world", "Hoor"]}
@@ -25,14 +26,6 @@ class HelloWorldBolt < RedStorm::DSL::Bolt
   end
 end
 
-class PigLatinBolt < RedStorm::DSL::Bolt
-  output_fields :string
-
-  on_receive :emit => true, :ack => true, :anchor => true do |tuple|
-    tuple[0] + "ay"
-  end
-end
-
 class HelloWorldTopology < RedStorm::DSL::Topology
   configure "Happyzone-Exclaim" do |env|
     if env == :cluster
@@ -52,4 +45,13 @@ class HelloWorldTopology < RedStorm::DSL::Topology
   bolt HelloWorldBolt do
     source PigLatinBolt, :global
   end
+
+  on_submit do |env|
+    case env
+    when :local
+      sleep(10)
+      cluster.shutdown
+    end
+  end
+
 end
