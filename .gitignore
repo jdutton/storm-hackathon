@@ -17,4 +17,4 @@ project/plugins/project/
 .scala_dependencies
 
 # redstorm
-ivy/
+ivy/ivy-2.3.0.jar
