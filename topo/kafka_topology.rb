@@ -6,9 +6,10 @@ java_import 'com.google.common.collect.ImmutableList'
 java_import 'java.util.ArrayList'
 
 require 'red_storm'
+require 'topo/tweet_xml_parse_bolt'
 
 class EchoBolt < RedStorm::DSL::Bolt
-  on_receive {|tuple| log.info(tuple[0].to_s)}
+  on_receive {|tuple| log.info("******************\n#{tuple[:id].to_s} from #{tuple[:author].to_s} [#{tuple[:author_uri].to_s}]\n#{tuple[:summary].to_s}")}
 end
 
 class KafkaTopology < RedStorm::DSL::Topology
@@ -21,18 +22,23 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   spout KafkaSpout, [spout_config]
 
-  bolt EchoBolt do
+  bolt TweetXmlParseBolt do
+    output_fields :id, :author, :author_uri, :summary
     source KafkaSpout, :shuffle
   end
 
+  bolt EchoBolt do
+    source TweetXmlParseBolt, :shuffle
+  end
+
   configure do |env|
-    debug true
+    # debug true
   end
 
   on_submit do |env|
     if env == :local
-      sleep(10)
-      cluster.shutdown
+      # sleep(10)
+      # cluster.shutdown
     end
   end
 end

@@ -3,11 +3,16 @@ GEM
   specs:
     faraday (0.8.7)
       multipart-post (~> 1.1)
+    mini_portile (0.5.1)
     multi_json (1.7.7)
     multipart-post (1.2.0)
+    nokogiri (1.6.0-java)
+      mini_portile (~> 0.5.0)
     rake (10.1.0)
+    redis (3.0.4)
     redstorm (0.6.6.beta2)
       rake
+    semantria_sdk (3.0.70)
     simple_oauth (0.2.0)
     twitter (4.8.1)
       faraday (~> 0.8, < 0.10)
@@ -18,5 +23,8 @@ PLATFORMS
   java
 
 DEPENDENCIES
+  nokogiri
+  redis
   redstorm (~> 0.6.6.beta2)
+  semantria_sdk
   twitter

@@ -6,4 +6,5 @@ group :topology do
   gem "twitter"
   gem "redis"
   gem "semantria_sdk"
+  gem "nokogiri"
 end
